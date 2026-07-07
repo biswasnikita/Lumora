@@ -1,0 +1,10 @@
+/target
+contracts/**/test_snapshots
+.claude/
+
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/tsconfig.tsbuildinfo
+
+scripts/deploy-output.json

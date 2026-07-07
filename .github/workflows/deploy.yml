@@ -1,0 +1,135 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-contract:
+    name: deploy-contract
+    runs-on: ubuntu-latest
+    outputs:
+      token_a_id: ${{ steps.deploy.outputs.token_a_id }}
+      token_b_id: ${{ steps.deploy.outputs.token_b_id }}
+      stake_pool_id: ${{ steps.deploy.outputs.stake_pool_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # See ci.yml: soroban-sdk 26.x rejects wasm32-unknown-unknown on
+      # Rust 1.82+; wasm32v1-none is the target it actually supports.
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Node (used only to derive the admin G-address from the secret key)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Stellar CLI binary
+        id: cache-stellar-cli
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/stellar
+          key: stellar-cli-bin-${{ runner.os }}-v23
+
+      - name: Install Stellar CLI
+        if: steps.cache-stellar-cli.outputs.cache-hit != 'true'
+        run: cargo install --locked stellar-cli --features opt
+
+      - name: Build contracts (wasm)
+        run: stellar contract build
+
+      - name: Deploy Token A, Token B, and StakePool to Testnet
+        id: deploy
+        env:
+          STELLAR_SECRET_KEY: ${{ secrets.STELLAR_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${STELLAR_SECRET_KEY:-}" ]; then
+            echo "::error::STELLAR_SECRET_KEY repo secret is not set. Add a funded Testnet account's S... secret key under Settings > Secrets > Actions." >&2
+            exit 1
+          fi
+
+          # Derive the admin G-address from the secret key (needed as a
+          # plain contract-call argument, not just a transaction signer).
+          mkdir -p /tmp/derive-address && cd /tmp/derive-address
+          npm init -y >/dev/null 2>&1
+          npm install --silent @stellar/stellar-sdk@^13 >/dev/null 2>&1
+          ADMIN=$(node -e "console.log(require('@stellar/stellar-sdk').Keypair.fromSecret(process.env.STELLAR_SECRET_KEY).publicKey())")
+          cd "$GITHUB_WORKSPACE"
+
+          TOKEN_WASM="target/wasm32v1-none/release/token.wasm"
+          POOL_WASM="target/wasm32v1-none/release/stake_pool.wasm"
+          REWARD_RATE="1000"
+          INITIAL_FUNDING="100000000"
+
+          TOKEN_A_ID=$(stellar contract deploy --wasm "$TOKEN_WASM" --source "$STELLAR_SECRET_KEY" --network testnet)
+          stellar contract invoke --id "$TOKEN_A_ID" --source "$STELLAR_SECRET_KEY" --network testnet -- \
+            initialize --admin "$ADMIN" --decimal 7 --name "Stake Token A" --symbol TKA
+
+          TOKEN_B_ID=$(stellar contract deploy --wasm "$TOKEN_WASM" --source "$STELLAR_SECRET_KEY" --network testnet)
+          stellar contract invoke --id "$TOKEN_B_ID" --source "$STELLAR_SECRET_KEY" --network testnet -- \
+            initialize --admin "$ADMIN" --decimal 7 --name "Stake Reward Token B" --symbol TKB
+
+          POOL_ID=$(stellar contract deploy --wasm "$POOL_WASM" --source "$STELLAR_SECRET_KEY" --network testnet)
+          stellar contract invoke --id "$POOL_ID" --source "$STELLAR_SECRET_KEY" --network testnet -- \
+            init --admin "$ADMIN" --token_a "$TOKEN_A_ID" --token_b "$TOKEN_B_ID" --reward_rate "$REWARD_RATE"
+
+          stellar contract invoke --id "$TOKEN_B_ID" --source "$STELLAR_SECRET_KEY" --network testnet -- \
+            mint --to "$ADMIN" --amount "$INITIAL_FUNDING"
+          stellar contract invoke --id "$POOL_ID" --source "$STELLAR_SECRET_KEY" --network testnet -- \
+            fund_rewards --admin "$ADMIN" --amount "$INITIAL_FUNDING"
+
+          echo "token_a_id=$TOKEN_A_ID" >> "$GITHUB_OUTPUT"
+          echo "token_b_id=$TOKEN_B_ID" >> "$GITHUB_OUTPUT"
+          echo "stake_pool_id=$POOL_ID" >> "$GITHUB_OUTPUT"
+
+          echo "Deployed: token_a=$TOKEN_A_ID token_b=$TOKEN_B_ID stake_pool=$POOL_ID"
+
+  deploy-frontend:
+    name: deploy-frontend
+    needs: [deploy-contract]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # NOTE: this app is Vite, not Next.js -- Vite only injects
+      # VITE_-prefixed vars into import.meta.env at build time, so these
+      # use that convention (not NEXT_PUBLIC_*) to actually take effect.
+      - name: Build
+        env:
+          VITE_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+          VITE_RPC_URL: "https://soroban-testnet.stellar.org"
+          VITE_TOKEN_A_ID: ${{ needs.deploy-contract.outputs.token_a_id }}
+          VITE_TOKEN_B_ID: ${{ needs.deploy-contract.outputs.token_b_id }}
+          VITE_STAKE_POOL_ID: ${{ needs.deploy-contract.outputs.stake_pool_id }}
+        run: npm run build
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::error::VERCEL_TOKEN repo secret is not set. Add one under Settings > Secrets > Actions (no deploy platform was already configured in this repo, so Vercel is the default)." >&2
+            exit 1
+          fi
+          npx --yes vercel --prod --token "$VERCEL_TOKEN" --yes
