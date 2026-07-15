@@ -8,6 +8,8 @@
   --accent-contrast: #ffffff;
   --danger-bg: #fee2e2;
   --danger-text: #991b1b;
+  --success-bg: #dcfce7;
+  --success-text: #166534;
   color-scheme: light dark;
 }
 
@@ -22,6 +24,8 @@
     --accent-contrast: #10121a;
     --danger-bg: #3f1d1d;
     --danger-text: #fca5a5;
+    --success-bg: #14351f;
+    --success-text: #86efac;
   }
 }
 
@@ -231,4 +235,96 @@ button.secondary {
   color: var(--muted);
   font-size: 0.8rem;
   margin-top: 4px;
+}
+
+/* --- XLM balance in header --- */
+.xlm-balance {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+/* --- Send XLM panel --- */
+.field-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 8px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.send-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* --- Transaction feedback --- */
+.tx-feedback {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  word-break: break-word;
+}
+
+.tx-feedback strong {
+  font-size: 0.9rem;
+}
+
+.tx-feedback a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tx-feedback a:hover {
+  text-decoration: underline;
+}
+
+.tx-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.tx-error {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.tx-hash code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+/* --- Mobile responsiveness --- */
+@media (max-width: 560px) {
+  .app {
+    padding: 16px 12px 40px;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .wallet-connected {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .earned-value {
+    font-size: 1.8rem;
+  }
 }

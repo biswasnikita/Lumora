@@ -12,9 +12,11 @@ import {
   type UserData,
 } from "./lib/contracts";
 import { connectWallet, getConnectedAddress, isFreighterAvailable } from "./lib/wallet";
+import { fetchXlmBalance } from "./lib/xlm";
 import { PoolStats } from "./components/PoolStats";
 import { StakePanel } from "./components/StakePanel";
 import { RewardsPanel } from "./components/RewardsPanel";
+import { SendXlmPanel } from "./components/SendXlmPanel";
 import "./App.css";
 
 export default function App() {
@@ -25,8 +27,17 @@ export default function App() {
   const [earned, setEarned] = useState<bigint | null>(null);
   const [tokenABalance, setTokenABalance] = useState<bigint | null>(null);
   const [tokenBBalance, setTokenBBalance] = useState<bigint | null>(null);
+  const [xlmBalance, setXlmBalance] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const refreshXlmBalance = useCallback(async (addr: string) => {
+    try {
+      setXlmBalance(await fetchXlmBalance(addr));
+    } catch {
+      // Balance fetch failures are non-fatal; leave the last known value.
+    }
+  }, []);
 
   const refreshPoolState = useCallback(async () => {
     try {
@@ -66,14 +77,20 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => {
       refreshPoolState();
-      if (address) refreshUserState(address);
+      if (address) {
+        refreshUserState(address);
+        refreshXlmBalance(address);
+      }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [address, refreshPoolState, refreshUserState]);
+  }, [address, refreshPoolState, refreshUserState, refreshXlmBalance]);
 
   useEffect(() => {
-    if (address) refreshUserState(address);
-  }, [address, refreshUserState]);
+    if (address) {
+      refreshUserState(address);
+      refreshXlmBalance(address);
+    }
+  }, [address, refreshUserState, refreshXlmBalance]);
 
   async function handleConnect() {
     setError(null);
@@ -91,15 +108,40 @@ export default function App() {
     setEarned(null);
     setTokenABalance(null);
     setTokenBBalance(null);
+    setXlmBalance(null);
     setError(null);
   }
 
-  async function withBusy(fn: () => Promise<void>) {
+  async function withBusy(fn: (addr: string) => Promise<void>) {
     setError(null);
+    // Resolve the wallet address live from Freighter at submit time rather than
+    // trusting React state, which can be null/stale (e.g. authorized in the
+    // extension but never captured by the app). This is the address used both as
+    // the tx source (publicKey) and as the `user` contract argument, so it must
+    // be a real key or the SDK throws "constructed using a default account".
+    let addr = address;
+    if (!addr) {
+      addr = await getConnectedAddress();
+    }
+    if (!addr) {
+      // Surface the real Freighter error (not installed / declined / locked /
+      // wrong network) instead of a generic message, so failures are diagnosable.
+      try {
+        addr = await connectWallet();
+      } catch (e) {
+        setError(`Wallet not connected: ${(e as Error).message}`);
+        return;
+      }
+    }
+    if (!addr) {
+      setError("Connect your Freighter wallet first.");
+      return;
+    }
+    if (addr !== address) setAddress(addr);
     setBusy(true);
     try {
-      await fn();
-      await Promise.all([refreshPoolState(), address ? refreshUserState(address) : Promise.resolve()]);
+      await fn(addr);
+      await Promise.all([refreshPoolState(), refreshUserState(addr)]);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -115,6 +157,11 @@ export default function App() {
         </a>
         {address ? (
           <div className="wallet-connected">
+            {xlmBalance !== null && (
+              <span className="xlm-balance">
+                {Number(xlmBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} XLM
+              </span>
+            )}
             <span className="wallet-pill">{address.slice(0, 4)}…{address.slice(-4)}</span>
             <button className="secondary disconnect-btn" onClick={handleDisconnect}>
               Disconnect
@@ -140,20 +187,25 @@ export default function App() {
 
       <main className="app-grid">
         <PoolStats poolState={poolState} />
+        <SendXlmPanel
+          address={address}
+          xlmBalance={xlmBalance}
+          onSent={() => address && refreshXlmBalance(address)}
+        />
         <StakePanel
           address={address}
           userData={userData}
           tokenABalance={tokenABalance}
           busy={busy}
-          onStake={(amount) => withBusy(() => stake(address!, amount))}
-          onUnstake={(amount) => withBusy(() => unstake(address!, amount))}
+          onStake={(amount) => withBusy((addr) => stake(addr, amount))}
+          onUnstake={(amount) => withBusy((addr) => unstake(addr, amount))}
         />
         <RewardsPanel
           address={address}
           earned={earned}
           tokenBBalance={tokenBBalance}
           busy={busy}
-          onClaim={() => withBusy(async () => void (await claimReward(address!)))}
+          onClaim={() => withBusy(async (addr) => void (await claimReward(addr)))}
         />
       </main>
     </div>
