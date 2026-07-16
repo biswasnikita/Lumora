@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/app", "destination": "https://lumora-app-eight.vercel.app/app" },
-    { "source": "/app/:path*", "destination": "https://lumora-app-eight.vercel.app/app/:path*" }
+    { "source": "/app", "destination": "https://frontend-sandy-mu-11.vercel.app/app" },
+    { "source": "/app/", "destination": "https://frontend-sandy-mu-11.vercel.app/app" },
+    { "source": "/app/:path*", "destination": "https://frontend-sandy-mu-11.vercel.app/app/:path*" }
   ]
 }
