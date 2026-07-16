@@ -146,17 +146,21 @@ export function FeaturesSection({
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16 mb-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16 auto-rows-fr"
         >
-          {features.map((feature) => (
+          {features.map((feature, idx) => (
             <motion.div
               key={feature.id}
               variants={itemVariants}
-              className="flex flex-col group"
+              className={cn(
+                "group flex flex-col rounded-2xl border border-slate-800 bg-slate-950/40 p-7 transition-colors hover:border-cyan-500/40",
+                idx === 0 && "md:col-span-2",
+                idx === 3 && "lg:col-span-1 md:col-span-2"
+              )}
             >
               {/* Icon */}
-              <div className="mb-8">
-                <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-b from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/20 transform transition-transform group-hover:scale-110 duration-300">
+              <div className="mb-6">
+                <div className="w-11 h-11 flex items-center justify-center rounded-xl bg-gradient-to-b from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/20 transform transition-transform group-hover:scale-110 duration-300">
                   {feature.icon}
                 </div>
               </div>

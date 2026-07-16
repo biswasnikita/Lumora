@@ -54,7 +54,7 @@ export function SolutionSection() {
   }, []);
 
   return (
-    <section id="solution" className="w-full bg-slate-900 text-white py-24 flex flex-col items-center overflow-hidden border-b border-slate-700/30">
+    <section id="how" className="w-full bg-slate-900 text-white py-24 flex flex-col items-center overflow-hidden border-b border-slate-700/30">
       <div className="max-w-7xl w-full px-6 md:px-12 lg:px-16 space-y-12">
         {/* Header Section */}
         <div className="flex flex-col gap-4 max-w-[560px]">

@@ -145,10 +145,143 @@ body {
   word-break: break-word;
 }
 
-.app-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+/* --- Dashboard layout --- */
+.dash {
+  display: flex;
+  flex-direction: column;
   gap: 18px;
+}
+
+.dash-intro {
+  margin-bottom: 2px;
+}
+
+.dash-title {
+  font-size: 1.9rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.dash-sub {
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 60ch;
+  margin: 0;
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.strip-tile {
+  background: var(--card-bg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.strip-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.strip-label {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.strip-unit {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card--hero {
+  padding: 30px 32px;
+}
+
+.rewards-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.rewards-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rewards-eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.rewards-hero .earned-value {
+  font-size: 3rem;
+}
+
+.earned-value--idle {
+  -webkit-text-fill-color: var(--muted);
+  color: var(--muted);
+  background: none;
+}
+
+.rewards-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  min-width: 200px;
+}
+
+.mini-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.mini-stat-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.mini-stat-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.claim-btn {
+  width: 100%;
+}
+
+.dash-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  align-items: start;
 }
 
 .card {
@@ -387,8 +520,20 @@ button.secondary {
     justify-content: flex-end;
   }
 
-  .app-grid {
+  .stat-strip {
     grid-template-columns: 1fr;
+  }
+
+  .dash-title {
+    font-size: 1.5rem;
+  }
+
+  .card--hero {
+    padding: 22px 20px;
+  }
+
+  .rewards-hero .earned-value {
+    font-size: 2.2rem;
   }
 
   .earned-value {

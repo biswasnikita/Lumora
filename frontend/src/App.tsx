@@ -186,21 +186,17 @@ export default function App() {
 
       {error && <div className="error-banner">{error}</div>}
 
-      <main className="app-grid">
+      <main className="dash">
+        <div className="dash-intro">
+          <h2 className="dash-title">Stake XLM assets. Earn every second.</h2>
+          <p className="dash-sub">
+            A transparent, fully-onchain staking dashboard. Deposit Token A, watch your Token B
+            rewards accrue live, and withdraw whenever you like.
+          </p>
+        </div>
+
         <PoolStats poolState={poolState} />
-        <SendXlmPanel
-          address={address}
-          xlmBalance={xlmBalance}
-          onSent={() => address && refreshXlmBalance(address)}
-        />
-        <StakePanel
-          address={address}
-          userData={userData}
-          tokenABalance={tokenABalance}
-          busy={busy}
-          onStake={(amount) => withBusy((addr) => stake(addr, amount))}
-          onUnstake={(amount) => withBusy((addr) => unstake(addr, amount))}
-        />
+
         <RewardsPanel
           address={address}
           earned={earned}
@@ -208,6 +204,22 @@ export default function App() {
           busy={busy}
           onClaim={() => withBusy(async (addr) => void (await claimReward(addr)))}
         />
+
+        <div className="dash-cols">
+          <StakePanel
+            address={address}
+            userData={userData}
+            tokenABalance={tokenABalance}
+            busy={busy}
+            onStake={(amount) => withBusy((addr) => stake(addr, amount))}
+            onUnstake={(amount) => withBusy((addr) => unstake(addr, amount))}
+          />
+          <SendXlmPanel
+            address={address}
+            xlmBalance={xlmBalance}
+            onSent={() => address && refreshXlmBalance(address)}
+          />
+        </div>
       </main>
     </div>
   );

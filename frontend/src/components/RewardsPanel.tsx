@@ -12,26 +12,34 @@ export function RewardsPanel({ address, earned, tokenBBalance, busy, onClaim }: 
   const hasRewards = (earned ?? 0n) > 0n;
 
   return (
-    <section className="card">
-      <h2>Your Rewards</h2>
-      {!address ? (
-        <p className="muted">Connect your wallet to see your rewards.</p>
-      ) : (
-        <>
-          <div className="earned-display">
+    <section className="card card--hero rewards-hero">
+      <div className="rewards-hero-main">
+        <span className="rewards-eyebrow">Claimable Rewards</span>
+        {!address ? (
+          <>
+            <span className="earned-value earned-value--idle">—</span>
+            <p className="muted">Connect your wallet to start earning Token B every second.</p>
+          </>
+        ) : (
+          <>
             <span className="earned-value">{earned === null ? "…" : toDisplay(earned)}</span>
-            <span className="earned-label">Token B claimable</span>
+            <span className="earned-label">Token B accruing in real time</span>
+          </>
+        )}
+      </div>
+
+      {address && (
+        <div className="rewards-hero-side">
+          <div className="mini-stat">
+            <span className="mini-stat-label">Wallet Token B</span>
+            <span className="mini-stat-value">
+              {tokenBBalance === null ? "…" : toDisplay(tokenBBalance)}
+            </span>
           </div>
-          <dl className="stat-list">
-            <div>
-              <dt>Your Token B balance</dt>
-              <dd>{tokenBBalance === null ? "…" : toDisplay(tokenBBalance)}</dd>
-            </div>
-          </dl>
-          <button disabled={busy || !hasRewards} onClick={onClaim}>
-            Claim Rewards
+          <button disabled={busy || !hasRewards} onClick={onClaim} className="claim-btn">
+            {hasRewards ? "Claim Rewards" : "Nothing to Claim"}
           </button>
-        </>
+        </div>
       )}
     </section>
   );

@@ -8,33 +8,21 @@ export function PoolStats({ poolState }: { poolState: PoolState | null }) {
       ? (Number(poolState.reward_rate) * SECONDS_PER_YEAR * 100) / Number(poolState.total_staked)
       : null;
 
+  const tiles = [
+    { label: "Total Staked", value: poolState ? toDisplay(poolState.total_staked) : "…", unit: "Token A" },
+    { label: "Reward Rate", value: poolState ? toDisplay(poolState.reward_rate) : "…", unit: "Token B / sec" },
+    { label: "Estimated APR", value: apr === null ? "—" : `~${apr.toFixed(1)}%`, unit: "variable" },
+  ];
+
   return (
-    <section className="card">
-      <h2>Pool Overview</h2>
-      {!poolState ? (
-        <p className="muted">Loading…</p>
-      ) : (
-        <dl className="stat-list">
-          <div>
-            <dt>Total Staked (Token A)</dt>
-            <dd>{toDisplay(poolState.total_staked)}</dd>
-          </div>
-          <div>
-            <dt>Reward Rate (Token B / sec)</dt>
-            <dd>{toDisplay(poolState.reward_rate)}</dd>
-          </div>
-          <div>
-            <dt>Estimated APR</dt>
-            <dd>{apr === null ? "—" : `~${apr.toFixed(1)}%`}</dd>
-          </div>
-        </dl>
-      )}
-      {poolState && (
-        <p className="hint">
-          APR is a rough estimate (reward_rate × seconds/year ÷ total staked) — it moves as the
-          pool's total staked amount changes.
-        </p>
-      )}
+    <section className="stat-strip" aria-label="Pool overview">
+      {tiles.map((t) => (
+        <div className="strip-tile" key={t.label}>
+          <span className="strip-value">{t.value}</span>
+          <span className="strip-label">{t.label}</span>
+          <span className="strip-unit">{t.unit}</span>
+        </div>
+      ))}
     </section>
   );
 }
